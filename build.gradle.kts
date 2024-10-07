@@ -1,19 +1,3 @@
-/*
- * Copyright 2008-present MongoDB, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import java.io.ByteArrayOutputStream
 import java.net.URI
 
@@ -24,6 +8,7 @@ buildscript {
 }
 
 plugins {
+    java
     idea
     `java-library`
     `maven-publish`
@@ -33,6 +18,7 @@ plugins {
     id("com.github.spotbugs") version "4.7.9"
     id("com.diffplug.spotless") version "6.19.0"
     id("com.github.johnrengelman.shadow") version "7.0.0"
+    application
 }
 
 version = "10.5.0-SNAPSHOT"
@@ -50,8 +36,8 @@ repositories {
 }
 
 // Usage: ./gradlew -DscalaVersion=2.12 -DsparkVersion=3.1.4
-val scalaVersion = System.getProperty("scalaVersion", "2.13")
-val sparkVersion = System.getProperty("sparkVersion", "3.5.1")
+val scalaVersion = System.getProperty("scalaVersion", "2.12")
+val sparkVersion = System.getProperty("sparkVersion", "3.1.2")
 
 extra.apply {
     set("annotationsVersion", "22.0.0")
@@ -89,6 +75,12 @@ dependencies {
 
     shadow("org.mongodb:mongodb-driver-sync:${project.extra["mongodbDriverVersion"]}")
 
+    // Add the MongoDB Spark Connector and Spark dependencies
+    implementation("org.mongodb.spark:mongo-spark-connector_2.12:3.0.1")
+    implementation("org.apache.spark:spark-core_2.12:3.1.2")
+    implementation("org.apache.spark:spark-sql_2.12:3.1.2")
+    testImplementation("junit:junit:4.13.2")
+
     // Test version of Spark
     testImplementation("org.apache.spark:spark-core_$scalaVersion:$sparkVersion")
     testImplementation("org.apache.spark:spark-sql_$scalaVersion:$sparkVersion")
@@ -115,6 +107,7 @@ java {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.release.set(8)
+    options.compilerArgs.add("-Xdiags:verbose")
 }
 
 // ===========================
@@ -386,4 +379,9 @@ tasks.register("publishArchives") {
     if (gitVersion == version) {
         dependsOn("publish")
     }
+}
+
+// Add this block to configure the application plugin
+application {
+    mainClass.set("com.example.MongoSparkExample")
 }
